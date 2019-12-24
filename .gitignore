@@ -1,0 +1,4 @@
+dist/
+yundama.egg-info/
+.idea/
+.vscode/
