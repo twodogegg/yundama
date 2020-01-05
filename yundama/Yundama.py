@@ -4,7 +4,9 @@ import hashlib
 import time
 import json
 import requests
-from yundama.Logger import Log
+from yundama.Logger import Logger
+import os
+from datetime import datetime
 
 
 class Yundama:
@@ -37,6 +39,7 @@ class Yundama:
     返回示例：
     820
     """
+
     def get_balance_result(self):
         result = self.get_balance()
         return result['RspData']['cust_val']
@@ -72,6 +75,7 @@ class Yundama:
     返回示例：
     9unr
     """
+
     def get_code_result(self, img_data, predict_type):
         result = self.get_code(img_data, predict_type)
         return result['RspData']['result']
@@ -123,10 +127,16 @@ class Yundama:
 
     @staticmethod
     def __handle_response(response):
+
         if int(response['RetCode']) > 0:
-            Log("error :" + response['ErrMsg'])
+            dir = os.path.abspath('../logs')
+            filename = str(datetime.now().date()) + '-error'
+            log = Logger(filename=filename, dir=dir)
+            log.error(response)
             raise RuntimeError("错误码： %s，错误信息：%s" % (response['RetCode'], response['ErrMsg']))
         else:
+            log = Logger(dir=os.path.abspath('../logs'))
+            log.info(response)
             response['RspData'] = json.loads(response['RspData'])
             return response
 
