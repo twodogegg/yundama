@@ -8,42 +8,56 @@ from yundama.Logger import Log
 
 
 class Yundama:
-    app_id = ''
-    app_key = ''
+    __app_id = ''
+    __app_key = ''
+    __timestamp = ''
 
     def __init__(self, app_id, app_key):
-        self.app_id = app_id
-        self.app_key = app_key
-        self.timestamp = str(int(time.time()))
+        self.__app_id = app_id
+        self.__app_key = app_key
+        self.__timestamp = str(int(time.time()))
 
     """
-    取得余额信息
+    取得余额信息和返回信息
+    返回示例：
+    {'RetCode': '0', 'ErrMsg': 'succ', 'RequestId': '', 'RspData': {'cust_val': 820}}
     """
 
     def get_balance(self):
         url = 'http://pred.fateadm.com/api/custval'
         response = requests.post(url=url, data={
-            'user_id': self.app_id,
-            'timestamp': self.timestamp,
-            'sign': self.sign()
+            'user_id': self.__app_id,
+            'timestamp': self.__timestamp,
+            'sign': self.__sign()
         }).json()
-        return self.handle_response(response)
+        return self.__handle_response(response)
 
     """
-    取得验证码识别结果
+    直接取得余额的数值
+    返回示例：
+    820
+    """
+    def get_balance_result(self):
+        result = self.get_balance()
+        return result['RspData']['cust_val']
+
+    """
+    取得验证码识别结果和返回信息
     Content-type 请用application/x-www-form-urlencoded，暂时不支持application/json传输
     :img_data 图片的base_64数据
-    : predict_type 验证码类型 http://docs.fateadm.com/web/#/1?page_id=36 
+    : predict_type 验证码类型 http://docs.fateadm.com/web/#/1?page_id=36
+    返回示例:
+    {'RetCode': '0', 'ErrMsg': '', 'RequestId': '2020010110005008c25ef6000503c61a', 'RspData': {'result': '9unr'}}
     """
 
-    def get_code_result(self, img_data, predict_type):
+    def get_code(self, img_data, predict_type):
         url = 'http://pred.fateadm.com/api/capreg'
         response = requests.post(url=url, data={
-            'user_id': self.app_id,
-            'timestamp': self.timestamp,
-            'sign': self.sign(),
-            'app_id': self.app_key,
-            'asign': self.asign(),
+            'user_id': self.__app_id,
+            'timestamp': self.__timestamp,
+            'sign': self.__sign(),
+            'app_id': self.__app_key,
+            'asign': self.__asign(),
             'predict_type': predict_type,
             "up_type": "mt"
         }, files={
@@ -51,7 +65,16 @@ class Yundama:
         }, headers={
             'User-Agent': 'Mozilla/5.0',
         }).json()
-        return response
+        return self.__handle_response(response)
+
+    """
+    直接取得验证码的识别结果
+    返回示例：
+    9unr
+    """
+    def get_code_result(self, img_data, predict_type):
+        result = self.get_code(img_data, predict_type)
+        return result['RspData']['result']
 
     """
     识别失败时进行退款，请勿滥用
@@ -61,12 +84,12 @@ class Yundama:
     def refund(self, request_id):
         url = 'http://pred.fateadm.com/api/capjust'
         response = requests.post(url=url, json={
-            'user_id': self.app_key,
-            'timestamp': self.timestamp,
-            'sign': self.sign(),
+            'user_id': self.__app_key,
+            'timestamp': self.__timestamp,
+            'sign': self.__sign(),
             'request_id': request_id
         }).json()
-        return self.handle_response(response)
+        return self.__handle_response(response)
 
     """
     充值操作
@@ -77,29 +100,29 @@ class Yundama:
     def recharge(self, card_id, card_key):
         url = 'http://pred.fateadm.com/api/charge'
         response = requests.post(url=url, json={
-            'user_id': self.app_key,
-            'timestamp': self.timestamp,
-            'sign': self.sign(),
-            'csign': self.csign(card_id, card_key),
+            'user_id': self.__app_key,
+            'timestamp': self.__timestamp,
+            'sign': self.__sign(),
+            'csign': self.__csign(card_id, card_key),
             'card_id': card_id
         }).json()
-        return self.handle_response(response)
+        return self.__handle_response(response)
 
-    def sign(self):
-        return self.md5(self.app_id + self.timestamp + self.md5(self.timestamp + self.app_key))
+    def __sign(self):
+        return self.__md5(self.__app_id + self.__timestamp + self.__md5(self.__timestamp + self.__app_key))
 
-    def asign(self):
-        return self.md5(self.app_key + self.timestamp + self.md5(self.timestamp + self.app_id))
+    def __asign(self):
+        return self.__md5(self.__app_key + self.__timestamp + self.__md5(self.__timestamp + self.__app_id))
 
-    def csign(self, card_id, card_key):
-        return self.md5(self.app_key + self.timestamp + card_id + card_key)
+    def __csign(self, card_id, card_key):
+        return self.__md5(self.__app_key + self.__timestamp + card_id + card_key)
 
     """
     对返回值进行处理
     """
 
     @staticmethod
-    def handle_response(response):
+    def __handle_response(response):
         if int(response['RetCode']) > 0:
             Log("error :" + response['ErrMsg'])
             raise RuntimeError("错误码： %s，错误信息：%s" % (response['RetCode'], response['ErrMsg']))
@@ -108,7 +131,7 @@ class Yundama:
             return response
 
     @staticmethod
-    def md5(value):
+    def __md5(value):
         md5 = hashlib.md5()
         md5.update(value.encode())
         return md5.hexdigest()

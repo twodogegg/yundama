@@ -24,6 +24,9 @@ yundama = Yundama(app_id="你的pd_id", app_key="你的pd_key")
 
 ```
 yundama.get_balance()
+
+# 直接查询余额的的结果
+yundama.get_balance_result()
 ```
 
 ### 提交需要验证的图片
@@ -31,6 +34,9 @@ yundama.get_balance()
 [类型说明](http://docs.fateadm.com/web/#/1?page_id=36)
 ```
 img = open('../data/image.png', 'rb')
+yundama.get_code(img.read(), '验证码类型')
+
+# 直接返回识别结果
 yundama.get_code_result(img.read(), '验证码类型')
 ```
 ### 退款
