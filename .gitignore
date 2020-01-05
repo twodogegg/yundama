@@ -3,3 +3,4 @@ yundama.egg-info/
 .idea/
 .vscode/
 *.log
+__pycache__/
